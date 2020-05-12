@@ -4,6 +4,8 @@ from wtforms import StringField, PasswordField, BooleanField, SubmitField
 from wtforms.validators import DataRequired, Email, EqualTo, Length, ValidationError
 from flask_login import current_user
 from flaskblog.models import User
+from flaskblog import bcrypt
+
 
 class RegistrationForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired(), Length(min=2, max=20)])
@@ -22,11 +24,13 @@ class RegistrationForm(FlaskForm):
         if user:
             raise ValidationError('That email is taken. Please choose a different one')
 
+
 class LoginForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
     password = PasswordField('Password', validators=[DataRequired()])
     remember = BooleanField('Remember Me')
     submit = SubmitField('Login')
+
 
 class UpdateAccountForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired(), Length(min=2, max=20)])
@@ -46,6 +50,7 @@ class UpdateAccountForm(FlaskForm):
             if user:
                 raise ValidationError('That email is taken. Please choose a different one')
 
+
 class RequestResetForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
     submit = SubmitField('Request Password Reset')
@@ -55,14 +60,16 @@ class RequestResetForm(FlaskForm):
         if user is None:
             raise ValidationError('There is no account with that email. You must register first')
 
-class UpdatePwdForm(FlaskForm):
-	password = PasswordField('Password', validators=[DataRequired()])
-	submit = SubmitField('Continue')
 
-	def validate_password(self, password):
-		verify_pwd = bcrypt.check_password_hash(current_user.password, password.data)
-		if not verify_pwd:
-			raise ValidationError('Could not validate password. Please try again')
+class UpdatePwdForm(FlaskForm):
+    password = PasswordField('Password', validators=[DataRequired()])
+    submit = SubmitField('Continue')
+
+    def validate_password(self, password):
+        verify_pwd = bcrypt.check_password_hash(current_user.password, password.data)
+        if not verify_pwd:
+            raise ValidationError('Could not validate password. Please try again')
+
 
 class ResetPasswordForm(FlaskForm):
     password = PasswordField('Password', validators=[DataRequired()])

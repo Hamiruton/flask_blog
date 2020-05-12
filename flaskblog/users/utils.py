@@ -2,8 +2,11 @@ import os
 import secrets
 from PIL import Image
 from flask import url_for, current_app
-from flask_mail import Message
-from flaskblog import mail
+from flaskblog.config import Config
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
 
 def save_picture(form_picture):
 	random_hex = secrets.token_hex(8)
@@ -18,12 +21,28 @@ def save_picture(form_picture):
 
 	return picture_fn
 
+
 def send_reset_email(user):
 	token = user.get_reset_token()
-	msg = Message('Password Reset Request', sender='axelhamilton02@gmail.com', recipients=[user.email])
-	msg.body = f'''To reset your password, visit the following link:
-{url_for('users.reset_token', token=token, _external=True)}
 
-If you did not make this request then simply ignore this email and no changes will be made.
-'''
-	mail.send(msg)
+	msg = MIMEMultipart()
+	msg['Subject'] = 'Reset Password'
+	msg['From'] = Config.MAIL_USERNAME
+	msg['To'] = user.email
+
+	html = f"""\
+	<html>
+		<body>
+			<h5>To reset your password, visit the following link: {url_for('users.reset_token', token=token, _external=True)}</h5>
+			<p>If you did not make this request then simply ignore this email and no changes will be made.</p>
+		</body>
+	</html>
+	"""
+	mail = MIMEText(html, 'html')
+	msg.attach(mail)
+
+	with smtplib.SMTP('smtp.gmail.com', 587) as server:
+		server.ehlo()
+		server.starttls()
+		server.login(Config.MAIL_USERNAME, Config.MAIL_PASSWORD)
+		server.sendmail(Config.MAIL_USERNAME, user.email, msg.as_string())
